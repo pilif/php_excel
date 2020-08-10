@@ -19,6 +19,10 @@
 #ifndef PHP_EXCEL_H
 #define PHP_EXCEL_H 1
 
+#if PHP_VERSION_ID >= 80000
+  #define TSRMLS_CC
+#endif
+
 extern zend_module_entry excel_module_entry;
 #define phpext_excel_ptr &excel_module_entry
 
