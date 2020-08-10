@@ -2891,7 +2891,7 @@ EXCEL_METHOD(Sheet, copy)
 #define PE_RETURN_IS_LONG RETURN_LONG
 #define PE_RETURN_IS_BOOL RETURN_BOOL
 #define PE_RETURN_IS_DOUBLE RETURN_DOUBLE
-#define PE_RETURN_IS_STRING(data) if (data) { RETURN_STRING((char *)data) } else { RETURN_NULL(); }
+#define PE_RETURN_IS_STRING(data) if (data) { RETURN_STRING((char *)data); } else { RETURN_NULL(); }
 
 #define PHP_EXCEL_INFO(func_name, type) \
 { \
