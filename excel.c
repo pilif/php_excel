@@ -2139,7 +2139,7 @@ EXCEL_METHOD(Sheet, readRow)
 		if (!php_excel_read_cell(row, lc, &value, sheet, book, &format, read_formula)) {
 			zval_ptr_dtor(&value);
 			zval_dtor(return_value);
-			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %d, column %d with error '%s'", row, lc, xlBookErrorMessage(book));
+			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %ld, column %d with error '%s'", row, lc, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		} else {
 			add_next_index_zval(return_value, &value);
@@ -2199,7 +2199,7 @@ EXCEL_METHOD(Sheet, readCol)
 		if (!php_excel_read_cell(lc, col, &value, sheet, book, &format, read_formula)) {
 			zval_ptr_dtor(&value);
 			zval_dtor(return_value);
-			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %d, column %d with error '%s'", lc, col, xlBookErrorMessage(book));
+			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %d, column %ld with error '%s'", lc, col, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		} else {
 			add_next_index_zval(return_value, &value);
@@ -2234,7 +2234,7 @@ EXCEL_METHOD(Sheet, read)
 	}
 
 	if (!php_excel_read_cell(row, col, return_value, sheet, book, &format, read_formula)) {
-		php_error_docref(NULL, E_WARNING, "Failed to read cell in row %d, column %d with error '%s'", row, col, xlBookErrorMessage(book));
+		php_error_docref(NULL, E_WARNING, "Failed to read cell in row %ld, column %ld with error '%s'", row, col, xlBookErrorMessage(book));
 		RETURN_FALSE;
 	}
 
@@ -2346,7 +2346,7 @@ EXCEL_METHOD(Sheet, write)
 	}
 
 	if (!php_excel_write_cell(sheet, book, row, col, data, oformat ? format : 0, dtype)) {
-		php_error_docref(NULL, E_WARNING, "Failed to write cell in row %d, column %d with error '%s'", row, col, xlBookErrorMessage(book));
+		php_error_docref(NULL, E_WARNING, "Failed to write cell in row %ld, column %ld with error '%s'", row, col, xlBookErrorMessage(book));
 		RETURN_FALSE;
 	}
 
@@ -2391,7 +2391,7 @@ EXCEL_METHOD(Sheet, writeRow)
 
 	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(data), element) {
 		if (!php_excel_write_cell(sheet, book, row, i++, element, (oformat ? format : 0), -1)) {
-			php_error_docref(NULL, E_WARNING, "Failed to write cell in row %d, column %d with error '%s'", row, i-1, xlBookErrorMessage(book));
+			php_error_docref(NULL, E_WARNING, "Failed to write cell in row %ld, column %ld with error '%s'", row, i-1, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		}
 	} ZEND_HASH_FOREACH_END();
@@ -2438,7 +2438,7 @@ EXCEL_METHOD(Sheet, writeCol)
 
 	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(data), element) {
 		if (!php_excel_write_cell(sheet, book, i++, col, element, oformat ? format : 0, dtype)) {
-			php_error_docref(NULL, E_WARNING, "Failed to write cell in row %d, column %d with error '%s'", i-1, col, xlBookErrorMessage(book));
+			php_error_docref(NULL, E_WARNING, "Failed to write cell in row %ld, column %ld with error '%s'", i-1, col, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		}
 	} ZEND_HASH_FOREACH_END();
