@@ -22,6 +22,7 @@
 
 #include "libxl.h"
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "php.h"
 #include "php_ini.h"
@@ -84,7 +85,7 @@ PHP_INI_END()
 		ce.create_object = excel_object_new_ ## c_name; \
 		excel_ce_ ## c_name = zend_register_internal_class_ex(&ce, NULL); \
 		memcpy(&excel_object_handlers_ ## c_name, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-		excel_object_handlers_ ## c_name .offset = XtOffsetOf(excel_ ## c_name ## _object, std); \
+		excel_object_handlers_ ## c_name .offset = offsetof(excel_ ## c_name ## _object, std); \
 		excel_object_handlers_ ## c_name .free_obj = excel_ ## c_name ## _object_free_storage; \
 		excel_object_handlers_ ## c_name .clone_obj = clone; \
 	}
@@ -102,7 +103,7 @@ typedef struct _excel_book_object {
 } excel_book_object;
 
 static inline excel_book_object *php_excel_book_object_fetch_object(zend_object *obj) {
-	return (excel_book_object *)((char *)(obj) - XtOffsetOf(excel_book_object, std));
+	return (excel_book_object *)((char *)(obj) - offsetof(excel_book_object, std));
 }
 
 #define Z_EXCEL_BOOK_OBJ_P(zv) php_excel_book_object_fetch_object(Z_OBJ_P(zv));
@@ -124,7 +125,7 @@ typedef struct _excel_sheet_object {
 } excel_sheet_object;
 
 static inline excel_sheet_object *php_excel_sheet_object_fetch_object(zend_object *obj) {
-	return (excel_sheet_object *)((char *)(obj) - XtOffsetOf(excel_sheet_object, std));
+	return (excel_sheet_object *)((char *)(obj) - offsetof(excel_sheet_object, std));
 }
 
 #define Z_EXCEL_SHEET_OBJ_P(zv) php_excel_sheet_object_fetch_object(Z_OBJ_P(zv));
@@ -157,7 +158,7 @@ typedef struct _excel_font_object {
 } excel_font_object;
 
 static inline excel_font_object *php_excel_font_object_fetch_object(zend_object *obj) {
-	return (excel_font_object *)((char *)(obj) - XtOffsetOf(excel_font_object, std));
+	return (excel_font_object *)((char *)(obj) - offsetof(excel_font_object, std));
 }
 #define Z_EXCEL_FONT_OBJ_P(zv) php_excel_font_object_fetch_object(Z_OBJ_P(zv));
 
@@ -188,7 +189,7 @@ typedef struct _excel_format_object {
 } excel_format_object;
 
 static inline excel_format_object *php_excel_format_object_fetch_object(zend_object *obj) {
-	return (excel_format_object *)((char *)(obj) - XtOffsetOf(excel_format_object, std));
+	return (excel_format_object *)((char *)(obj) - offsetof(excel_format_object, std));
 }
 #define Z_EXCEL_FORMAT_OBJ_P(zv) php_excel_format_object_fetch_object(Z_OBJ_P(zv));
 
@@ -1157,7 +1158,7 @@ EXCEL_METHOD(Book, __construct)
 {
 	BookHandle book;
 	zval *object = getThis();
-	char *name = NULL, *key;
+	const char *name = NULL, *key;
 	int name_len = 0, key_len = 0;
 	zend_string *name_zs = NULL, *key_zs = NULL;
 	zend_bool new_excel = 0;
@@ -1180,10 +1181,10 @@ EXCEL_METHOD(Book, __construct)
 
 #if defined(HAVE_LIBXL_SETKEY)
 
-	if (INI_STR("excel.license_name") && INI_STR("excel.license_key")) {
-		name = INI_STR("excel.license_name");
+	name = zend_ini_string_ex("excel.license_name", sizeof("excel.license_name") - 1, 0, NULL);
+	key = zend_ini_string_ex("excel.license_key", sizeof("excel.license_key") - 1, 0, NULL);
+	if (name && key) {
 		name_len = strlen(name);
-		key = INI_STR("excel.license_key");
 		key_len = strlen(key);
 	}
 
@@ -2155,7 +2156,7 @@ EXCEL_METHOD(Sheet, readRow)
 
 		if (!php_excel_read_cell(row, lc, &value, sheet, book, &format, read_formula)) {
 			zval_ptr_dtor(&value);
-			zval_dtor(return_value);
+			zval_ptr_dtor(return_value);
 			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %ld, column %d with error '%s'", row, lc, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		} else {
@@ -2215,7 +2216,7 @@ EXCEL_METHOD(Sheet, readCol)
 
 		if (!php_excel_read_cell(lc, col, &value, sheet, book, &format, read_formula)) {
 			zval_ptr_dtor(&value);
-			zval_dtor(return_value);
+			zval_ptr_dtor(return_value);
 			php_error_docref(NULL, E_WARNING, "Failed to read cell in row %d, column %ld with error '%s'", lc, col, xlBookErrorMessage(book));
 			RETURN_FALSE;
 		} else {
@@ -2246,7 +2247,7 @@ EXCEL_METHOD(Sheet, read)
 	SHEET_AND_BOOK_FROM_OBJECT(sheet, book, object);
 
 	if (oformat) {
-		zval_dtor(oformat);
+		zval_ptr_dtor(oformat);
 		ZVAL_NULL(oformat);
 	}
 
@@ -2271,7 +2272,7 @@ zend_bool php_excel_write_cell(SheetHandle sheet, BookHandle book, int row, int 
 
 	switch (Z_TYPE_P(data)) {
 		case IS_NULL:
-			if (INI_INT("excel.skip_empty") > 0) {
+			if (zend_ini_long("excel.skip_empty", sizeof("excel.skip_empty") - 1, 0) > 0) {
 				return 1;
 			}
 			if (!format) {
@@ -2324,7 +2325,7 @@ zend_bool php_excel_write_cell(SheetHandle sheet, BookHandle book, int row, int 
 							return xlSheetWriteNum(sheet, row, col, dval, format);
 					}
 				}
-				if (Z_STRLEN_P(data) == 0 && INI_INT("excel.skip_empty") == 2) {
+				if (Z_STRLEN_P(data) == 0 && zend_ini_long("excel.skip_empty", sizeof("excel.skip_empty") - 1, 0) == 2) {
 					return 1;
 				}
 				return xlSheetWriteStr(sheet, row, col, (const char*) data_zs->val, format);
